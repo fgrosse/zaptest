@@ -67,7 +67,7 @@ func TestLoggerWriter(t *testing.T) {
 
 // Describe the TestedType using ginkgo/gomega.
 var _ = Describe("TestedType", func() {
-	It("should run all processes and block until they have finished", func() {
+	It("should do stuff", func() {
 		tt := &TestedType{log: zaptest.LoggerWriter(GinkgoWriter)}
 		Expect(tt.DoStuff()).To(Succeed())
 	})
