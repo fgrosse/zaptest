@@ -28,7 +28,12 @@ type logger interface {
 
 // testOutput is a zapcore.SyncWriter that writes all output to l.
 type testOutput struct {
-	l logger
+	logger
+}
+
+// writeSyncer decorates an io.Writer with a no-op Sync() function.
+type writeSyncer struct {
+	io.Writer
 }
 
 // Config is the default function used create the configuration for the zap
@@ -52,7 +57,7 @@ var Level = zap.DebugLevel
 // Logger creates a new zap.Logger that writes all messages via t.Log(…).
 // Note that both testing.T and testing.B implement the logger interface.
 func Logger(t logger) *zap.Logger {
-	return newLogger(testOutput{t})
+	return newLogger(writeSyncer{testOutput{t}})
 }
 
 // LoggerWriter creates a new zap.Logger that writes all messages to the given
@@ -61,6 +66,8 @@ func LoggerWriter(w io.Writer) *zap.Logger {
 	return newLogger(writeSyncer{w})
 }
 
+// newLogger creates a *new zap.Logger using the package level Config function
+// and Level value.
 func newLogger(w zapcore.WriteSyncer) *zap.Logger {
 	conf := Config()
 	enc := zapcore.NewConsoleEncoder(conf)
@@ -69,20 +76,14 @@ func newLogger(w zapcore.WriteSyncer) *zap.Logger {
 	return zap.New(core)
 }
 
+// Write logs all messages as logs via o.
 func (o testOutput) Write(p []byte) (int, error) {
 	msg := strings.TrimSpace(string(p))
-	o.l.Log(msg)
+	o.Log(msg)
 	return len(p), nil
 }
 
-func (o testOutput) Sync() error {
-	return nil
-}
-
-type writeSyncer struct {
-	io.Writer
-}
-
+// Sync does nothing since all output was written to the writer immediately.
 func (ws writeSyncer) Sync() error {
 	return nil
 }

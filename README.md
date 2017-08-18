@@ -58,7 +58,7 @@ func (tt *TestedType) DoStuff() error {
 	return nil
 }
 
-// TestLoggerWriter show how to use the LoggerWriter function for ginkgo tests.
+// TestLoggerWriter shows how to use the LoggerWriter function for ginkgo tests.
 // Run `ginkgo -v`to see the output of this test.
 func TestLoggerWriter(t *testing.T) {
 	RegisterFailHandler(Fail)
