@@ -1,0 +1,14 @@
+language: go
+
+go:
+  - 1.8
+  - 1.9
+
+install:
+  - go get go.uber.org/zap
+  - go get github.com/onsi/ginkgo/ginkgo
+  - go get github.com/onsi/gomega
+
+script:
+  - go test -v
+  - ginkgo -v
