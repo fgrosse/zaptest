@@ -4,6 +4,9 @@ go:
   - "1.11.x"
   - "tip"
 
+env:
+  - GO111MODULE=on
+
 install:
   - go get github.com/onsi/ginkgo/ginkgo
   - go get github.com/golang/lint/golint
