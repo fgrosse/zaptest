@@ -14,7 +14,6 @@ package zaptest
 import (
 	"io"
 	"strings"
-	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -46,7 +45,7 @@ var Config = func() zapcore.EncoderConfig {
 
 	// In unit tests we are not that interested in full timestamps so we omit
 	// them just like testing.T.Log does.
-	conf.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {}
+	conf.TimeKey = ""
 
 	return conf
 }
