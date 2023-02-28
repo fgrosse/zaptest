@@ -1,8 +1,14 @@
-[![Build Status](https://secure.travis-ci.org/fgrosse/zaptest.png?branch=master)](http://travis-ci.org/fgrosse/zaptest)
-[![GoDoc](https://godoc.org/github.com/fgrosse/zaptest?status.svg)](https://godoc.org/github.com/fgrosse/zaptest)
-[![license](https://img.shields.io/badge/license-MIT-4183c4.svg)](https://github.com/fgrosse/zaptest/blob/master/LICENSE)
+<h1 align="center">Zaptest ⚡👩‍🔧</h1>
+<p align="center">Test helpers to use a github.com/uber-go/zap logger in unit tests.</p>
+<p align="center">
+   <a href="https://github.com/fgrosse/zaptest/releases"><img src="https://img.shields.io/github/tag/fgrosse/zaptest.svg?label=version&color=brightgreen"></a>
+   <a href="https://github.com/fgrosse/zaptest/actions/workflows/test.yml"><img src="https://github.com/fgrosse/zaptest/actions/workflows/test.yml/badge.svg"></a>
+   <a href="https://goreportcard.com/report/github.com/fgrosse/zaptest"><img src="https://goreportcard.com/badge/github.com/fgrosse/zaptest"></a>
+   <a href="https://pkg.go.dev/github.com/fgrosse/zaptest"><img src="https://img.shields.io/badge/godoc-reference-blue.svg?color=blue"></a>
+   <a href="https://github.com/fgrosse/zaptest/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-4183c4.svg"></a>
+</p>
 
-## zaptest
+---
 
 Package `zaptest` implements test helpers that facilitate using a `zap.Logger`
 in standard go unit tests.
