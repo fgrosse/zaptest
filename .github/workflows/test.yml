@@ -21,7 +21,8 @@ jobs:
       - name: Set up ginkgo
         run: go get github.com/onsi/ginkgo/ginkgo
 
-      - name: Test
-        run:
-          - go test -v
-          - ginkgo -v
+      - name: Unit Tests
+        run: go test -v
+
+      - name: Ginkgo Tests
+        run: ginkgo -v
