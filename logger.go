@@ -72,12 +72,16 @@ func newLogger(w zapcore.WriteSyncer) *zap.Logger {
 	enc := zapcore.NewConsoleEncoder(conf)
 	core := zapcore.NewCore(enc, w, Level)
 
-	return zap.New(core)
+	return zap.New(core, zap.AddCaller())
 }
 
 // Write logs all messages as logs via o.
 func (o testOutput) Write(p []byte) (int, error) {
-	msg := strings.TrimSpace(string(p))
+	// The escape sequence clears the line before writing the log message.
+	// This is unfortunately necessary as we can't call t.Helper() from all of
+	// zap's logging functions, which means t.Log will include an incorrect
+	// caller
+	msg := "\x1b[2K\r" + strings.TrimSpace(string(p))
 	o.Log(msg)
 	return len(p), nil
 }
