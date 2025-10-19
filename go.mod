@@ -1,8 +1,6 @@
 module github.com/fgrosse/zaptest
 
-go 1.23.0
-
-toolchain go1.24.1
+go 1.25.0
 
 require (
 	github.com/onsi/ginkgo v1.7.0

@@ -13,7 +13,6 @@ package zaptest
 
 import (
 	"io"
-	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -23,11 +22,7 @@ import (
 // testing.T and testing.B.
 type logger interface {
 	Log(args ...interface{})
-}
-
-// testOutput is a zapcore.SyncWriter that writes all output to l.
-type testOutput struct {
-	logger
+	Output() io.Writer
 }
 
 // writeSyncer decorates an io.Writer with a no-op Sync() function.
@@ -56,7 +51,7 @@ var Level = zap.DebugLevel
 // Logger creates a new zap.Logger that writes all messages via t.Log(…).
 // Note that both testing.T and testing.B implement the logger interface.
 func Logger(t logger) *zap.Logger {
-	return newLogger(writeSyncer{testOutput{t}})
+	return newLogger(writeSyncer{t.Output()})
 }
 
 // LoggerWriter creates a new zap.Logger that writes all messages to the given
@@ -73,13 +68,6 @@ func newLogger(w zapcore.WriteSyncer) *zap.Logger {
 	core := zapcore.NewCore(enc, w, Level)
 
 	return zap.New(core)
-}
-
-// Write logs all messages as logs via o.
-func (o testOutput) Write(p []byte) (int, error) {
-	msg := strings.TrimSpace(string(p))
-	o.Log(msg)
-	return len(p), nil
 }
 
 // Sync does nothing since all output was written to the writer immediately.
