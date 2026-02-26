@@ -12,6 +12,7 @@
 package zaptest
 
 import (
+	"context"
 	"io"
 
 	"go.uber.org/zap"
@@ -25,15 +26,23 @@ type logger interface {
 	Output() io.Writer
 }
 
+// withContext extends the logger interface. This is done as a separate optional
+// interface for backwards compatibility reasons. The testing.TB includes a Context()
+// function since Go 1.24 so practically all users should use context aware logging.
+type withContext interface {
+	Context() context.Context
+}
+
 // writeSyncer decorates an io.Writer with a no-op Sync() function.
 type writeSyncer struct {
-	io.Writer
+	ctx context.Context
+	w   io.Writer
 }
 
 // Config is the default function used create the configuration for the zap
 // logger. You can change this if you want to change the logger encoding options.
 //
-// By default the zap development config will be used and timestamps will be
+// By default, the zap development config will be used and timestamps will be
 // omitted (just like normal t.Log does).
 var Config = func() zapcore.EncoderConfig {
 	conf := zap.NewDevelopmentEncoderConfig()
@@ -51,13 +60,18 @@ var Level = zap.DebugLevel
 // Logger creates a new zap.Logger that writes all messages via t.Log(…).
 // Note that both testing.T and testing.B implement the logger interface.
 func Logger(t logger) *zap.Logger {
-	return newLogger(writeSyncer{t.Output()})
+	ctx := context.Background()
+	if ctxT, ok := t.(withContext); ok {
+		ctx = ctxT.Context()
+	}
+
+	return newLogger(writeSyncer{w: t.Output(), ctx: ctx})
 }
 
 // LoggerWriter creates a new zap.Logger that writes all messages to the given
 // io.Writer.
 func LoggerWriter(w io.Writer) *zap.Logger {
-	return newLogger(writeSyncer{w})
+	return newLogger(writeSyncer{w: w, ctx: context.Background()})
 }
 
 // newLogger creates a *new zap.Logger using the package level Config function
@@ -68,6 +82,18 @@ func newLogger(w zapcore.WriteSyncer) *zap.Logger {
 	core := zapcore.NewCore(enc, w, Level)
 
 	return zap.New(core)
+}
+
+// Write the provided data as long as the test context is not done yet.
+// We do this to avoid errors caused by writes after a test has completed.
+func (ws writeSyncer) Write(p []byte) (n int, err error) {
+	select {
+	case <-ws.ctx.Done():
+		// If the test context was done, any writes to its output will lead to a panic.
+		return 0, ws.ctx.Err()
+	default:
+		return ws.w.Write(p)
+	}
 }
 
 // Sync does nothing since all output was written to the writer immediately.
