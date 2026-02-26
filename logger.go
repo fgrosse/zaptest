@@ -24,6 +24,12 @@ import (
 type logger interface {
 	Log(args ...interface{})
 	Output() io.Writer
+}
+
+// withContext extends the logger interface. This is done as a separate optional
+// interface for backwards compatibility reasons. The testing.TB includes a Context()
+// function since Go 1.24 so practically all users should use context aware logging.
+type withContext interface {
 	Context() context.Context
 }
 
@@ -36,7 +42,7 @@ type writeSyncer struct {
 // Config is the default function used create the configuration for the zap
 // logger. You can change this if you want to change the logger encoding options.
 //
-// By default the zap development config will be used and timestamps will be
+// By default, the zap development config will be used and timestamps will be
 // omitted (just like normal t.Log does).
 var Config = func() zapcore.EncoderConfig {
 	conf := zap.NewDevelopmentEncoderConfig()
@@ -54,7 +60,12 @@ var Level = zap.DebugLevel
 // Logger creates a new zap.Logger that writes all messages via t.Log(…).
 // Note that both testing.T and testing.B implement the logger interface.
 func Logger(t logger) *zap.Logger {
-	return newLogger(writeSyncer{w: t.Output(), ctx: t.Context()})
+	ctx := context.Background()
+	if ctxT, ok := t.(withContext); ok {
+		ctx = ctxT.Context()
+	}
+
+	return newLogger(writeSyncer{w: t.Output(), ctx: ctx})
 }
 
 // LoggerWriter creates a new zap.Logger that writes all messages to the given
@@ -78,6 +89,7 @@ func newLogger(w zapcore.WriteSyncer) *zap.Logger {
 func (ws writeSyncer) Write(p []byte) (n int, err error) {
 	select {
 	case <-ws.ctx.Done():
+		// If the test context was done, any writes to its output will lead to a panic.
 		return 0, ws.ctx.Err()
 	default:
 		return ws.w.Write(p)
