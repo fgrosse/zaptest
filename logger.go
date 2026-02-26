@@ -12,6 +12,7 @@
 package zaptest
 
 import (
+	"context"
 	"io"
 
 	"go.uber.org/zap"
@@ -23,11 +24,13 @@ import (
 type logger interface {
 	Log(args ...interface{})
 	Output() io.Writer
+	Context() context.Context
 }
 
 // writeSyncer decorates an io.Writer with a no-op Sync() function.
 type writeSyncer struct {
-	io.Writer
+	ctx context.Context
+	w   io.Writer
 }
 
 // Config is the default function used create the configuration for the zap
@@ -51,13 +54,13 @@ var Level = zap.DebugLevel
 // Logger creates a new zap.Logger that writes all messages via t.Log(…).
 // Note that both testing.T and testing.B implement the logger interface.
 func Logger(t logger) *zap.Logger {
-	return newLogger(writeSyncer{t.Output()})
+	return newLogger(writeSyncer{w: t.Output(), ctx: t.Context()})
 }
 
 // LoggerWriter creates a new zap.Logger that writes all messages to the given
 // io.Writer.
 func LoggerWriter(w io.Writer) *zap.Logger {
-	return newLogger(writeSyncer{w})
+	return newLogger(writeSyncer{w: w, ctx: context.Background()})
 }
 
 // newLogger creates a *new zap.Logger using the package level Config function
@@ -68,6 +71,17 @@ func newLogger(w zapcore.WriteSyncer) *zap.Logger {
 	core := zapcore.NewCore(enc, w, Level)
 
 	return zap.New(core)
+}
+
+// Write the provided data as long as the test context is not done yet.
+// We do this to avoid errors caused by writes after a test has completed.
+func (ws writeSyncer) Write(p []byte) (n int, err error) {
+	select {
+	case <-ws.ctx.Done():
+		return 0, ws.ctx.Err()
+	default:
+		return ws.w.Write(p)
+	}
 }
 
 // Sync does nothing since all output was written to the writer immediately.
